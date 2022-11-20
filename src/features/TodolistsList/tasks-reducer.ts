@@ -18,8 +18,6 @@ import {
     SetAppStatusActionType
 } from "../../app/app-reducer"
 import {handleServerAppError, handleServerNetworkError} from "../../utils/error-utils"
-import {AxiosResponse} from "axios";
-import {call, put} from "redux-saga/effects";
 
 const initialState: TasksStateType = {}
 
@@ -71,22 +69,21 @@ export const updateTaskAC = (taskId: string, model: UpdateDomainTaskModelType, t
 export const setTasksAC = (tasks: Array<TaskType>, todolistId: string) =>
     ({type: "SET-TASKS", tasks, todolistId} as const)
 
-export const addTaskTC = (title: string, todolistId: string) => (dispatch: Dispatch<ActionsType | SetAppErrorActionType | SetAppStatusActionType>) => {
+export const addTaskTC = (title: string, todolistId: string) => async (dispatch: Dispatch<ActionsType | SetAppErrorActionType | SetAppStatusActionType>) => {
     dispatch(setAppStatusAC("loading"))
-    todolistsAPI.createTask(todolistId, title)
-        .then(res => {
-            if (res.data.resultCode === 0) {
-                const task = res.data.data.item
-                const action = addTaskAC(task)
-                dispatch(action)
-                dispatch(setAppStatusAC("succeeded"))
-            } else {
-                handleServerAppError(res.data, dispatch);
-            }
-        })
-        .catch((error) => {
-            handleServerNetworkError(error, dispatch)
-        })
+    try {
+        const res = await todolistsAPI.createTask(todolistId, title)
+        if (res.data.resultCode === 0) {
+            const task = res.data.data.item
+            const action = addTaskAC(task)
+            dispatch(action)
+            dispatch(setAppStatusAC("succeeded"))
+        } else {
+            handleServerAppError(res.data, dispatch);
+        }
+    } catch (error) {
+        handleServerNetworkError(error, dispatch)
+    }
 }
 export const updateTaskTC = (taskId: string, domainModel: UpdateDomainTaskModelType, todolistId: string) =>
     (dispatch: ThunkDispatch, getState: () => AppRootStateType) => {

@@ -1,6 +1,6 @@
 import {call, put} from "redux-saga/effects";
-import {fetchTasksWorkerSaga} from "./tasks-sagas";
-import {setAppStatusAC} from "../../app/app-reducer";
+import {addTaskWorkerSaga, fetchTasksWorkerSaga} from "./tasks-sagas";
+import {setAppErrorAC, setAppStatusAC} from "../../app/app-reducer";
 import {
     GetTasksResponse,
     TaskPriorities,
@@ -37,5 +37,18 @@ test("fetchTasksWorkerSaga success flow", () => {
         ]
     }
     expect(gen.next(fakeApiResponse).value).toEqual(put(setTasksAC(fakeApiResponse.items, todolistId)))
-    expect(gen.next().value).toEqual(put(setAppStatusAC('succeeded')))
+    let next = gen.next()
+    expect(next.value).toEqual(put(setAppStatusAC('succeeded')))
+    expect(next.value).toBeTruthy()
+})
+
+test("addTaskWorkerSaga error flow", () => {
+    let todolistId = "todolistId"
+    let title = "task title"
+
+    const gen = addTaskWorkerSaga({type: "TASKS/ADD-TASK", title, todolistId})
+    expect(gen.next().value).toEqual(put(setAppStatusAC("loading")))
+    expect(gen.next().value).toEqual(call(todolistsAPI.createTask, todolistId, title))
+    expect(gen.throw({message: "some error"}).value).toEqual(put(setAppErrorAC("some error")))
+    expect(gen.next().value).toEqual(put(setAppStatusAC("failed")))
 })

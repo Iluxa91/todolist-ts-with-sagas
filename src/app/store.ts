@@ -5,9 +5,9 @@ import thunkMiddleware from "redux-thunk"
 import {appReducer} from "./app-reducer"
 import {authReducer} from "../features/Login/auth-reducer"
 import createSagaMiddleware from "redux-saga"
-import {takeEvery} from "redux-saga/effects";
+import {all} from "redux-saga/effects";
 import {tasksWatcherSaga} from "../features/TodolistsList/tasks-sagas";
-import {initializeAppWorkerSaga} from "./app-sagas";
+import {appWatcherSaga} from "./app-sagas";
 
 // объединяя reducer-ы с помощью combineReducers,
 // мы задаём структуру нашего единственного объекта-состояния
@@ -26,8 +26,7 @@ export type AppRootStateType = ReturnType<typeof rootReducer>
 sagaMiddleware.run(rootWatcher)
 
 function* rootWatcher() {
-    yield takeEvery("APP/INITIALIZE-APP", initializeAppWorkerSaga)
-    yield tasksWatcherSaga()
+    yield all([appWatcherSaga(), tasksWatcherSaga()])
 }
 
 // а это, чтобы можно было в консоли браузера обращаться к store в любой момент
